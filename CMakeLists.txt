@@ -106,6 +106,11 @@ foreach(file ${files})
 	configure_file(${file} shaders/${name})
 endforeach()
 
+configure_file(453-skeleton/textures/2k_earth_daymap.png 453-skeleton/textures/2k_earth_daymap.png COPYONLY)
+configure_file(453-skeleton/textures/2k_moon.png 453-skeleton/textures/2k_moon.png COPYONLY)
+configure_file(453-skeleton/textures/2k_sun.png 453-skeleton/textures/2k_sun.png COPYONLY)
+configure_file(453-skeleton/textures/2k_stars.png 453-skeleton/textures/2k_stars.png COPYONLY)
+
 add_executable(${APP_NAME} ${SOURCES})
 target_include_directories(${APP_NAME} PRIVATE ${INCLUDES})
 target_link_libraries(${APP_NAME} ${LIBRARIES})

@@ -20,6 +20,9 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
 
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtx/transform.hpp>
+
 #define _USE_MATH_DEFINES
 #include <math.h>
 
@@ -35,11 +38,33 @@ GLuint indexArray[50*50*6];
 
 
 
+struct SceneObject {
+	SceneObject(std::string texturePath, GLenum textureInterpolation) :
+		texture(texturePath, textureInterpolation),
+		position(0.0f, 0.0f, 0.0f),
+		scale(1),
+		transformationMatrix(1.0f) // This constructor sets it as the identity matrix
+	{}
+
+	CPU_Geometry cgeom;
+	GPU_Geometry ggeom;
+	Texture texture;
+
+	glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
+
+	// Alternatively, you could represent rotation via a normalized heading vec:
+	// glm::vec3 heading;
+	glm::vec2 scale; // Or, alternatively, a glm::vec2 scale;
+	glm::mat4 transformationMatrix;
+};
+
+
 // We gave this code in one of the tutorials, so leaving it here too
 void updateGPUGeometry(GPU_Geometry &gpuGeom, CPU_Geometry const &cpuGeom) {
 	gpuGeom.bind();
 	gpuGeom.setVerts(cpuGeom.verts);
-	gpuGeom.setCols(cpuGeom.cols);
+	//gpuGeom.setCols(cpuGeom.cols);
+	gpuGeom.setTexCoords(cpuGeom.texCoords);
 	gpuGeom.setNormals(cpuGeom.normals);
 }
 
@@ -154,112 +179,6 @@ void makeSphere() {
 }
 
 
-/**
-void colouredTriangles(CPU_Geometry &geom) {
-	geom.cols.push_back(glm::vec3(1.0, 0.0, 0.0));
-	geom.cols.push_back(glm::vec3(1.0, 0.0, 0.0));
-	geom.cols.push_back(glm::vec3(1.0, 0.0, 0.0));
-	geom.cols.push_back(glm::vec3(1.0, 0.0, 0.0));
-	geom.cols.push_back(glm::vec3(1.0, 0.0, 0.0));
-	geom.cols.push_back(glm::vec3(1.0, 0.0, 0.0));
-}
-
-void positiveZFace(std::vector<glm::vec3> const &originQuad, CPU_Geometry &geom) {
-	const glm::mat4 T = glm::translate(glm::mat4(1.0f), glm::vec3(0.0, 0.0, 0.5));
-	for(auto i = originQuad.begin(); i < originQuad.end(); ++i) {
-		geom.verts.push_back(
-			glm::vec3(T * glm::vec4((*i), 1.0))
-		);
-	}
-	geom.normals.push_back(glm::vec3(0.0, 0.0, 1.0));
-	geom.normals.push_back(glm::vec3(0.0, 0.0, 1.0));
-	geom.normals.push_back(glm::vec3(0.0, 0.0, 1.0));
-	geom.normals.push_back(glm::vec3(0.0, 0.0, 1.0));
-	geom.normals.push_back(glm::vec3(0.0, 0.0, 1.0));
-	geom.normals.push_back(glm::vec3(0.0, 0.0, 1.0));
-}
-
-void positiveXFace(std::vector<glm::vec3> const &originQuad, CPU_Geometry &geom) {
-	const glm::mat4 R = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	const glm::mat4 T = glm::translate(glm::mat4(1.0f), glm::vec3(0.5f, 0.0f, 0.0f));
-	for(auto i = originQuad.begin(); i < originQuad.end(); ++i) {
-		geom.verts.push_back(
-			glm::vec3(T * R * glm::vec4((*i), 1.0))
-		);
-	}
-	geom.normals.push_back(glm::vec3(1.0, 0.0, 0.0));
-	geom.normals.push_back(glm::vec3(1.0, 0.0, 0.0));
-	geom.normals.push_back(glm::vec3(1.0, 0.0, 0.0));
-	geom.normals.push_back(glm::vec3(1.0, 0.0, 0.0));
-	geom.normals.push_back(glm::vec3(1.0, 0.0, 0.0));
-	geom.normals.push_back(glm::vec3(1.0, 0.0, 0.0));
-}
-
-void negativeZFace(std::vector<glm::vec3> const &originQuad, CPU_Geometry &geom) {
-	const glm::mat4 R = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	const glm::mat4 T = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -0.5f));
-	for(auto i = originQuad.begin(); i < originQuad.end(); ++i) {
-		geom.verts.push_back(
-			glm::vec3(T * R * glm::vec4((*i), 1.0))
-		);
-	}
-	geom.normals.push_back(glm::vec3(0.0, 0.0, -1.0));
-	geom.normals.push_back(glm::vec3(0.0, 0.0, -1.0));
-	geom.normals.push_back(glm::vec3(0.0, 0.0, -1.0));
-	geom.normals.push_back(glm::vec3(0.0, 0.0, -1.0));
-	geom.normals.push_back(glm::vec3(0.0, 0.0, -1.0));
-	geom.normals.push_back(glm::vec3(0.0, 0.0, -1.0));
-}
-
-void negativeXFace(std::vector<glm::vec3> const &originQuad, CPU_Geometry &geom) {
-	const glm::mat4 R = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	const glm::mat4 T = glm::translate(glm::mat4(1.0f), glm::vec3(-0.5f, 0.0f, 0.0f));
-	for(auto i = originQuad.begin(); i < originQuad.end(); ++i) {
-		geom.verts.push_back(
-			glm::vec3(T * R * glm::vec4((*i), 1.0))
-		);
-	}
-	geom.normals.push_back(glm::vec3(-1.0, 0.0, 0.0));
-	geom.normals.push_back(glm::vec3(-1.0, 0.0, 0.0));
-	geom.normals.push_back(glm::vec3(-1.0, 0.0, 0.0));
-	geom.normals.push_back(glm::vec3(-1.0, 0.0, 0.0));
-	geom.normals.push_back(glm::vec3(-1.0, 0.0, 0.0));
-	geom.normals.push_back(glm::vec3(-1.0, 0.0, 0.0));
-}
-
-void positiveYFace(std::vector<glm::vec3> const &originQuad, CPU_Geometry &geom) {
-	const glm::mat4 R = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	const glm::mat4 T = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.5f, 0.0f));
-	for(auto i = originQuad.begin(); i < originQuad.end(); ++i) {
-		geom.verts.push_back(
-			glm::vec3(T * R * glm::vec4((*i), 1.0))
-		);
-	}
-	geom.normals.push_back(glm::vec3(0.0, 1.0, 0.0));
-	geom.normals.push_back(glm::vec3(0.0, 1.0, 0.0));
-	geom.normals.push_back(glm::vec3(0.0, 1.0, 0.0));
-	geom.normals.push_back(glm::vec3(0.0, 1.0, 0.0));
-	geom.normals.push_back(glm::vec3(0.0, 1.0, 0.0));
-	geom.normals.push_back(glm::vec3(0.0, 1.0, 0.0));
-}
-
-void negativeYFace(std::vector<glm::vec3> const &originQuad, CPU_Geometry &geom) {
-	const glm::mat4 R = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	const glm::mat4 T = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, -0.5f, 0.0f));
-	for(auto i = originQuad.begin(); i < originQuad.end(); ++i) {
-		geom.verts.push_back(
-			glm::vec3(T * R * glm::vec4((*i), 1.0))
-		);
-	}
-	geom.normals.push_back(glm::vec3(0.0, -1.0, 0.0));
-	geom.normals.push_back(glm::vec3(0.0, -1.0, 0.0));
-	geom.normals.push_back(glm::vec3(0.0, -1.0, 0.0));
-	geom.normals.push_back(glm::vec3(0.0, -1.0, 0.0));
-	geom.normals.push_back(glm::vec3(0.0, -1.0, 0.0));
-	geom.normals.push_back(glm::vec3(0.0, -1.0, 0.0));
-}*/
-
-
 int main() {
 	Log::debug("Starting main");
 
@@ -282,24 +201,28 @@ int main() {
 	// Geometry.h/Geometry.cpp They will work for this assignment, but for some of
 	// the bonuses you may have to modify them.
 
-	
+	SceneObject earth("453-skeleton/textures/2k_earth_daymap.png", GL_LINEAR);
 	makeSphere();
 
-	CPU_Geometry temp;
 
 	
 	CPU_Geometry sphere;
 	for (int i = 0; i < numberOfIndexes; i++) {
 		int index = indexArray[i];
 		//Log::debug("Index");
-		sphere.verts.push_back(points[index]);
-		sphere.cols.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-		sphere.normals.push_back(points[index]);
+		earth.cgeom.verts.push_back(points[index]);
+		//earth.cgeom.cols.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+		earth.cgeom.normals.push_back(points[index]);
+		earth.cgeom.texCoords.push_back(textureMap[index]);
 
+
+		sphere.verts.push_back(points[index]);
+		//earth.cgeom.cols.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
+		sphere.normals.push_back(points[index]);
+		sphere.texCoords.push_back(textureMap[index]);
 	}
 
-	GPU_Geometry earthGPU;
-	updateGPUGeometry(earthGPU, sphere);
+	updateGPUGeometry(earth.ggeom, earth.cgeom);
 
 
 
@@ -339,9 +262,10 @@ int main() {
 	GPU_Geometry quads;
 	updateGPUGeometry(quads, square);
 	*/
-
+	Log::debug("Start Loop");
 	// RENDER LOOP
 	while (!window.shouldClose()) {
+		Log::debug("Looping");
 		glfwPollEvents();
 
 		glEnable(GL_LINE_SMOOTH);
@@ -357,7 +281,7 @@ int main() {
 
 		a4->viewPipeline(shader);
 
-		earthGPU.bind();
+		earth.ggeom.bind();
 		glDrawArrays(GL_TRIANGLES, 0, GLsizei(sphere.verts.size()));
 
 		//quads.bind();

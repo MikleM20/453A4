@@ -1,10 +1,11 @@
 #version 330 core
 
 in vec3 fragPos;
-in vec3 fragColor;
+in vec2 tc;
 in vec3 n;
 
 uniform vec3 light;
+uniform sampler2D sampler;
 
 out vec4 color;
 
@@ -12,5 +13,6 @@ void main() {
 	vec3 lightDir = normalize(light - fragPos);
     vec3 normal = normalize(n);
     float diff = max(dot(lightDir, normal), 0.0);
-	color = vec4(diff * fragColor, 1.0);
+	vec4 d = texture(sampler, tc);
+	color = vec4(diff * d);
 }
