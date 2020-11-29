@@ -23,13 +23,14 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-#define Stacks 50
-#define Slices 50
+#define Sections 50
 
 int numberOfPoints = 0;
 int numberOfIndexes = 0;
 std::vector<glm::vec3> points;
-GLuint indexArray[Slices * Stacks * 10];
+std::vector<glm::vec3> normals;
+std::vector<glm::vec2> textureMap;
+GLuint indexArray[50*50*6];
 
 
 
@@ -107,63 +108,47 @@ private:
 
 };
 void makeSphere() {
-	//Log::debug("Sphere");
-	for (int i = 0; i <= Slices; i++)
-	{
-		float v = i / float(Stacks);
-		float phi = v * ((glm::pi<float>()* (glm::pi<float>())) / Slices);
-		//float phi = v * ((glm::pi<float>() * 2));
+	float step = 1.f / (float)(Sections - 1);
+	float u = 0.f;
 
-		//Log::debug("L1");
-		// Loop Through Slices
-		for (int j = 0; j < Stacks; j++)
-		{
-			//Log::debug("L2");
-			float u = j / (float)Slices;
-			float theta = j * (glm::pi <float>() * 2 / Stacks);
+	// Traversing the planes of time and space
+	for (int i = 0; i < Sections; i++) {
+		float v = 0.f;
 
-			// Calc The Vertex Positions
-			float x = cosf(theta) * sinf(phi);
-			float y = cosf(phi);
-			float z = sinf(theta) * sinf(phi);
+		//Traversing the planes of time and space (again)
+		for (int j = 0; j < Sections; j++) {
+			glm::vec3 vertex = glm::vec3(1 * cos(2.f * M_PI * u) * sin(M_PI * v),
+				1 * sin(2.f * M_PI * u) * sin(M_PI * v),
+				1 * cos(M_PI * v));
 
-			// Push Back Vertex Data
-			points.push_back(glm::vec3(x, y, z));
+			glm::vec3 normal = glm::vec3(vertex);
 			numberOfPoints++;
+			points.push_back(vertex);
+			normals.push_back(normal);
+			textureMap.push_back(glm::vec2(u, v));
+
+			v += step;
 		}
+
+		u += step;
 	}
 
-}
-
-
-void setArray() {
-	//Log::debug("Array");
-	// Calc The Index Positions
-	for (int i = 0; i < numberOfPoints / 3 - Stacks; i++)
+	for (int i = 0; i < Sections - 1; i++)
 	{
-		//Log::debug("A1");
-		if ((i + 1) % Stacks == 0)
+		for (int j = 0; j < Sections - 1; j++)
 		{
-			indexArray[numberOfIndexes++] = i;
-			indexArray[numberOfIndexes++] = i - Stacks + 1;
-			indexArray[numberOfIndexes++] = i + Stacks;
+			unsigned int p00 = i * Sections + j;
+			unsigned int p01 = i * Sections + j + 1;
+			unsigned int p10 = (i + 1) * Sections + j;
+			unsigned int p11 = (i + 1) * Sections + j + 1;
 
-			indexArray[numberOfIndexes++] = i - Stacks + 1;
-			indexArray[numberOfIndexes++] = i + Stacks;
-			if (i + 1 == numberOfPoints / 3)
-				indexArray[numberOfIndexes++] = numberOfPoints - Stacks;
-			else
-				indexArray[numberOfIndexes++] = i + 1;
-		}
-		else
-		{
-			indexArray[numberOfIndexes++] = i;
-			indexArray[numberOfIndexes++] = i + 1;
-			indexArray[numberOfIndexes++] = i + Stacks;
+			indexArray[numberOfIndexes++] = p00;
+			indexArray[numberOfIndexes++] = p10;
+			indexArray[numberOfIndexes++] = p01;
 
-			indexArray[numberOfIndexes++] = i + 1;
-			indexArray[numberOfIndexes++] = i + Stacks;
-			indexArray[numberOfIndexes++] = i + Stacks + 1;
+			indexArray[numberOfIndexes++] = p01;
+			indexArray[numberOfIndexes++] = p10;
+			indexArray[numberOfIndexes++] = p11;
 		}
 	}
 }
@@ -299,7 +284,6 @@ int main() {
 
 	
 	makeSphere();
-	setArray();
 
 	CPU_Geometry temp;
 
