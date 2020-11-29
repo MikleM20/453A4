@@ -26,7 +26,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-#define Sections 50
+#define Sections 8
 
 int numberOfPoints = 0;
 int numberOfIndexes = 0;
@@ -49,7 +49,7 @@ struct SceneObject {
 	CPU_Geometry cgeom;
 	GPU_Geometry ggeom;
 	Texture texture;
-
+	float initialTheta = 180;
 	glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
 
 	// Alternatively, you could represent rotation via a normalized heading vec:
@@ -105,6 +105,8 @@ public:
 		aspect = float(width)/float(height);
 	}
 
+
+
 	void viewPipeline(ShaderProgram &sp) {
 		glm::mat4 M = glm::mat4(1.0);
 		glm::mat4 V = camera.getView();
@@ -120,6 +122,7 @@ public:
 		glUniformMatrix4fv(uniMat, 1, GL_FALSE, glm::value_ptr(V));
 		uniMat = glGetUniformLocation(sp, "P");
 		glUniformMatrix4fv(uniMat, 1, GL_FALSE, glm::value_ptr(P));
+
 	}
 
 	Camera camera;
@@ -132,25 +135,29 @@ private:
 	double mouseOldY;
 
 };
-void makeSphere() {
-	float step = 1.f / (float)(Sections - 1);
+void makeSphere(glm::mat4 &rotate) {
+	float step = 1.0f / (float)(Sections - 1);
 	float u = 0.f;
 
 	// Traversing the planes of time and space
 	for (int i = 0; i < Sections; i++) {
 		float v = 0.f;
-
+		Log::debug("test");
 		//Traversing the planes of time and space (again)
 		for (int j = 0; j < Sections; j++) {
 			glm::vec3 vertex = glm::vec3(1 * cos(2.f * M_PI * u) * sin(M_PI * v),
 				1 * sin(2.f * M_PI * u) * sin(M_PI * v),
 				1 * cos(M_PI * v));
 
-			glm::vec3 normal = glm::vec3(vertex);
+			//glm::vec3 normal = glm::vec3(vertex);
+			glm::vec3 normal = glm::vec3(vertex.x, vertex.y, vertex.z);
 			numberOfPoints++;
 			points.push_back(vertex);
-			normals.push_back(normal);
-			textureMap.push_back(glm::vec2(u, v));
+			glm::vec4 rotatedNormals = rotate * glm::vec4(normal, 1.0f);
+			normals.push_back(glm::vec3(rotatedNormals.x, rotatedNormals.y, rotatedNormals.z));
+			float uToPass = 1-u;
+			float vToPass = v;
+			textureMap.push_back(glm::vec2(uToPass, vToPass));
 
 			v += step;
 		}
@@ -201,8 +208,31 @@ int main() {
 	// Geometry.h/Geometry.cpp They will work for this assignment, but for some of
 	// the bonuses you may have to modify them.
 
-	SceneObject earth("453-skeleton/textures/2k_earth_daymap.png", GL_LINEAR);
-	makeSphere();
+	SceneObject earth("453-skeleton/textures/2k_earth_daymap.png", GL_NEAREST);
+	glm::mat4 base = glm::mat4(1.0f);
+	glm::mat4 spinnerY = glm::mat4(
+		cos(earth.initialTheta * M_PI / 180), 0.0f, -sin(earth.initialTheta * M_PI / 180), 0.0f,
+		0.0f, 1.0f, 0.0f, 0.0f,
+		sin(earth.initialTheta * M_PI / 180), 0.0f, cos(earth.initialTheta * M_PI / 180), 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
+		//cos(earth.initialTheta * M_PI / 180), sin(earth.initialTheta * M_PI / 180), 0.0f, 0.0f,
+		//-sin(earth.initialTheta * M_PI / 180), cos(earth.initialTheta * M_PI / 180), 0.0f, 0.0f,
+		//0.0f, 0.0f, 1.0f, 0.0f,
+		//0.0f, 0.0f, 0.0f, 1.0f
+	);
+	glm::mat4 spinnerZ = glm::mat4{
+		cos((-earth.initialTheta) * M_PI / 180), sin((-earth.initialTheta) * M_PI / 180), 0.0f, 0.0f,
+		-sin((-earth.initialTheta) * M_PI / 180), cos((-earth.initialTheta) * M_PI / 180), 0.0f, 0.0f,
+		0.0f, 0.0f, 1.0f, 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
+	};
+	glm::mat4 spinnerX = glm::mat4{
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f,cos(earth.initialTheta / 2 * M_PI / 180), sin(earth.initialTheta / 2 * M_PI / 180), 0.0f,
+		0.0f,-sin(earth.initialTheta / 2 * M_PI / 180), cos(earth.initialTheta / 2 * M_PI / 180), 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
+	};
+	makeSphere(spinnerZ);
 
 
 	
@@ -212,56 +242,21 @@ int main() {
 		//Log::debug("Index");
 		earth.cgeom.verts.push_back(points[index]);
 		//earth.cgeom.cols.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-		earth.cgeom.normals.push_back(points[index]);
+		earth.cgeom.normals.push_back(normals[index]);
 		earth.cgeom.texCoords.push_back(textureMap[index]);
 
 
 		sphere.verts.push_back(points[index]);
 		//earth.cgeom.cols.push_back(glm::vec3(1.0f, 0.0f, 0.0f));
-		sphere.normals.push_back(points[index]);
+		sphere.normals.push_back(normals[index]);
 		sphere.texCoords.push_back(textureMap[index]);
 	}
 
 	updateGPUGeometry(earth.ggeom, earth.cgeom);
 
+	earth.transformationMatrix = spinnerY*spinnerX* base;
 
 
-	/**
-	std::vector<glm::vec3> originQuad;
-	originQuad.push_back(glm::vec3{-0.5, 0.5, 0}); // top-left
-	originQuad.push_back(glm::vec3{-0.5, -0.5, 0}); // bottom-left
-	originQuad.push_back(glm::vec3{0.5, 0.5, 0}); // top-right
-
-	originQuad.push_back(glm::vec3{-0.5, -0.5, 0}); // bottom-left
-	originQuad.push_back(glm::vec3{0.5, -0.5, 0}); // bottom-right
-	originQuad.push_back(glm::vec3{0.5, 0.5, 0}); // top-right
-
-	
-
-	CPU_Geometry square;
-	positiveZFace(originQuad, square);
-	positiveXFace(originQuad, square);
-	negativeZFace(originQuad, square);
-	negativeXFace(originQuad, square);
-	positiveYFace(originQuad, square);
-	negativeYFace(originQuad, square);
-
-	//square.cols.resize(square.verts.size(), glm::vec3{1.0, 0.0, 0.0});
-	colouredTriangles(square);
-	colouredTriangles(square);
-	colouredTriangles(square);
-	colouredTriangles(square);
-	colouredTriangles(square);
-	colouredTriangles(square);
-
-
-	for(auto i = square.verts.begin(); i < square.verts.end(); ++i) {
-		std::cout << *i << std::endl;
-	}
-
-	GPU_Geometry quads;
-	updateGPUGeometry(quads, square);
-	*/
 	Log::debug("Start Loop");
 	// RENDER LOOP
 	while (!window.shouldClose()) {
@@ -279,11 +274,13 @@ int main() {
 
 		shader.use();
 
+
 		a4->viewPipeline(shader);
 
 		earth.ggeom.bind();
+		GLint myLoc = glGetUniformLocation(shader, "transform");
+		glUniformMatrix4fv(myLoc, 1, false, glm::value_ptr(earth.transformationMatrix));
 		glDrawArrays(GL_TRIANGLES, 0, GLsizei(sphere.verts.size()));
-
 		//quads.bind();
 		//glDrawArrays(GL_TRIANGLES, 0, GLsizei(square.verts.size()));
 

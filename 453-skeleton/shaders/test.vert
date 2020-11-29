@@ -3,9 +3,11 @@ layout (location = 0) in vec3 pos;
 layout (location = 1) in vec2 texCoord;
 layout (location = 2) in vec3 normal;
 
+
 uniform mat4 M;
 uniform mat4 V;
 uniform mat4 P;
+uniform mat4 transform;
 
 out vec3 fragPos;
 out vec2 tc;
@@ -15,5 +17,5 @@ void main() {
 	fragPos = pos;
 	tc = texCoord;
 	n = normal;
-	gl_Position = P * V * M * vec4(pos, 1.0);
+	gl_Position = P * V *M *transform*vec4(pos, 1.0);
 }

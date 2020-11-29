@@ -30,7 +30,6 @@ public:
 	operator GLuint() const {
 		return programID;
 	}
-
 private:
 	ShaderProgramHandle programID;
 
