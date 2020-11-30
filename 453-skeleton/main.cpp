@@ -34,13 +34,6 @@ std::vector<glm::vec3> points;
 std::vector<glm::vec3> normals;
 std::vector<glm::vec2> textureMap;
 GLuint indexArray[50*50*6];
-
-int numberOfPoints2 = 0;
-int numberOfIndexes2 = 0;
-std::vector<glm::vec3> points2;
-std::vector<glm::vec3> normals2;
-std::vector<glm::vec2> textureMap2;
-GLuint indexArray2[50 * 50 * 6];
 bool play = true;
 
 
@@ -159,7 +152,7 @@ private:
 	double mouseOldY;
 
 };
-void makeEarth(glm::mat4 &rotateX, glm::mat4 &rotateY) {
+void makeSphere(glm::mat4 &rotateX, glm::mat4 &rotateY) {
 	float step = 1.0f / (float)(Sections - 1);
 	float u = 0.f;
 
@@ -210,58 +203,13 @@ void makeEarth(glm::mat4 &rotateX, glm::mat4 &rotateY) {
 	}
 }
 
-void makeSun() {
-	float step = 1.0f / (float)(Sections - 1);
-	float u = 0.f;
 
-	// Traversing the planes of time and space
-	for (int i = 0; i < Sections; i++) {
-		float v = 0.f;
-		Log::debug("test");
-		//Traversing the planes of time and space (again)
-		for (int j = 0; j < Sections; j++) {
-			glm::vec3 vertex = glm::vec3(1 * cos(2.f * M_PI * u) * sin(M_PI * v),
-				1 * sin(2.f * M_PI * u) * sin(M_PI * v),
-				1 * cos(M_PI * v));
 
-			//glm::vec3 normal = glm::vec3(vertex);
-			glm::vec3 normal = glm::vec3(0,0,0);
-			numberOfPoints2++;
-			points2.push_back(vertex);
-			normals2.push_back(glm::vec3(vertex));
-			float uToPass = 1 - u;
-			float vToPass = v;
-			textureMap2.push_back(glm::vec2(uToPass, vToPass));
 
-			v += step;
-		}
-
-		u += step;
-	}
-
-	for (int i = 0; i < Sections - 1; i++)
-	{
-		for (int j = 0; j < Sections - 1; j++)
-		{
-			unsigned int p00 = i * Sections + j;
-			unsigned int p01 = i * Sections + j + 1;
-			unsigned int p10 = (i + 1) * Sections + j;
-			unsigned int p11 = (i + 1) * Sections + j + 1;
-
-			indexArray2[numberOfIndexes2++] = p00;
-			indexArray2[numberOfIndexes2++] = p10;
-			indexArray2[numberOfIndexes2++] = p01;
-
-			indexArray2[numberOfIndexes2++] = p01;
-			indexArray2[numberOfIndexes2++] = p10;
-			indexArray2[numberOfIndexes2++] = p11;
-		}
-	}
-}
 
 glm::mat4 makeSpinMat(float angle) {
 	return glm::mat4(
-		cos(angle*M_PI / 180), 0.0f, -sin(angle * M_PI / 180), 0.0f,
+		cos(angle * M_PI / 180), 0.0f, -sin(angle * M_PI / 180), 0.0f,
 		0.0f, 1.0f, 0.0f, 0.0f,
 		sin(angle * M_PI / 180), 0.0f, cos(angle * M_PI / 180), 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f
@@ -293,9 +241,9 @@ int main() {
 	// Geometry.h/Geometry.cpp They will work for this assignment, but for some of
 	// the bonuses you may have to modify them.
 
-	SceneObject earth("453-skeleton/textures/2k_earth_daymap.png", GL_LINEAR, 23, 0, 180, 3,0.05);
-	SceneObject sun("453-skeleton/textures/2k_sun.png", GL_LINEAR, 0, 0, 0, 0.5,0.3);
-	SceneObject moon("453-skeleton/textures/2k_moon.png", GL_LINEAR, 0, 0, 0, 1,0.01);
+	SceneObject earth("453-skeleton/textures/2k_earth_daymap.png", GL_LINEAR, 23, 0, 180, 3,0.075);
+	SceneObject sun("453-skeleton/textures/2k_sun.png", GL_LINEAR, 27, 0, 0, 0.5,0.3);
+	SceneObject moon("453-skeleton/textures/2k_moon.png", GL_LINEAR, 0, 0, 0, 1,0.025);
 	SceneObject bg("453-skeleton/textures/2k_stars.png", GL_LINEAR, 0, 0, 0, 1, 250);
 	glm::mat4 base = glm::mat4(1.0f);
 	glm::mat4 spinnerY = glm::mat4(
@@ -315,10 +263,7 @@ int main() {
 		0.0f, 0.0f, 0.0f, 1.0f
 	};
 	
-	makeEarth(spinnerY, spinnerX); //spinner X and Y are so that objects in proper orientation
-
-	makeSun();
-
+	makeSphere(spinnerY, spinnerX); //spinner X and Y are so that objects in proper orientation
 
 
 	
@@ -334,23 +279,24 @@ int main() {
 
 		sphere.verts.push_back(points[index]);
 
-		sun.cgeom.verts.push_back(points2[index]);
+		sun.cgeom.verts.push_back(points[index]);
 		sun.cgeom.normals.push_back(glm::vec3(-2,-2,-2));	//Doesnt matter since it wont be used
-		sun.cgeom.texCoords.push_back(textureMap2[index]);
+		sun.cgeom.texCoords.push_back(textureMap[index]);
 
-		moon.cgeom.verts.push_back(points2[index]);
-		moon.cgeom.normals.push_back(normals2[index]);
-		moon.cgeom.texCoords.push_back(textureMap2[index]);
+		moon.cgeom.verts.push_back(points[index]);
+		moon.cgeom.normals.push_back(normals[index]);
+		moon.cgeom.texCoords.push_back(textureMap[index]);
 
-		bg.cgeom.verts.push_back(points2[index]);
+		bg.cgeom.verts.push_back(points[index]);
 		bg.cgeom.normals.push_back(glm::vec3(-2, -2, -2));	//Doesnt matter since it wont be used
-		bg.cgeom.texCoords.push_back(textureMap2[index]);
+		bg.cgeom.texCoords.push_back(textureMap[index]);
 		
 	}
 
 	updateGPUGeometry(earth.ggeom, earth.cgeom);
 	updateGPUGeometry(sun.ggeom, sun.cgeom);
 	updateGPUGeometry(bg.ggeom, bg.cgeom);
+	updateGPUGeometry(moon.ggeom, moon.cgeom);
 
 	//earth.transformationMatrix = spinnerY* spinnerX* base;
 	glm::mat4 scaleEarth = glm::mat4{
@@ -363,19 +309,38 @@ int main() {
 		1, 0, 0, 0 ,
 		0, 1, 0, 0 ,
 		0, 0, 1, 0 ,
-		0.75, 0, 0, 1
+		0.80, 0, 0, 1
 	};
 	glm::mat4 spinEarth = makeSpinMat(earth.spin);
-
 	glm::mat4 tiltEarth = glm::mat4{
 		1.0f, 0.0f, 0.0f, 0.0f,
 		0.0f,cos(earth.tilt / 2 * M_PI / 180), sin(earth.tilt/ 2 * M_PI / 180), 0.0f,
 		0.0f,-sin(earth.tilt/ 2 * M_PI / 180), cos(earth.tilt/ 2 * M_PI / 180), 0.0f,
 		0.0f, 0.0f, 0.0f, 1.0f
 	};
-
 	glm::mat4 orbitEarth = makeSpinMat(earth.orbit);
-	Log::debug("Start Loop");
+
+
+	glm::mat4 scaleMoon = glm::mat4{
+		moon.scale, 0,0,0,
+		0,moon.scale,0,0,
+		0,0,moon.scale,0,
+		0,0,0,1
+	};
+	glm::mat4 moveMoon = glm::mat4{
+		1, 0, 0, 0 ,
+		0, 1, 0, 0 ,
+		0, 0, 1, 0 ,
+		0.15, 0, 0, 1
+	};
+	glm::mat4 spinMoon = makeSpinMat(moon.spin);
+	glm::mat4 tiltMoon = glm::mat4{
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f,cos(moon.tilt / 2 * M_PI / 180), sin(moon.tilt / 2 * M_PI / 180), 0.0f,
+		0.0f,-sin(moon.tilt / 2 * M_PI / 180), cos(moon.tilt / 2 * M_PI / 180), 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
+	};
+	glm::mat4 orbitMoon = makeSpinMat(moon.orbit);
 
 	glm::mat4 scaleSun= glm::mat4{
 		sun.scale, 0,0,0,
@@ -383,16 +348,15 @@ int main() {
 		0,0,sun.scale,0,
 		0,0,0,1
 	};
-
-
 	glm::mat4 spinSun = makeSpinMat(sun.spin);
-
-	glm::mat4 moveBG = glm::mat4{
-		1, 0, 0, 0 ,
-		0, 1, 0, 0 ,
-		0, 0, 1, 0 ,
-		0, -100, 0, 1
+	glm::mat4 tiltSun = glm::mat4{
+		1.0f, 0.0f, 0.0f, 0.0f,
+		0.0f, cos(earth.tilt / 2 * M_PI / 180), sin(earth.tilt / 2 * M_PI / 180), 0.0f,
+		0.0f, -sin(earth.tilt / 2 * M_PI / 180), cos(earth.tilt / 2 * M_PI / 180), 0.0f,
+		0.0f, 0.0f, 0.0f, 1.0f
 	};
+
+
 	glm::mat4 spinBG = makeSpinMat(bg.spin);
 	glm::mat4 scaleBG = glm::mat4{
 	bg.scale, 0,0,0,
@@ -400,9 +364,11 @@ int main() {
 	0,0,bg.scale,0,
 	0,0,0,1
 	};
+
+	Log::debug("Start Loop");
 	// RENDER LOOP
 	while (!window.shouldClose()) {
-		Log::debug("Looping");
+		//Log::debug("Looping");
 		glfwPollEvents();
 
 		glEnable(GL_LINE_SMOOTH);
@@ -420,14 +386,17 @@ int main() {
 		a4->viewPipeline(shader);
 
 		if (play) {
-			earth.spin += 1;
-			earth.orbit += 0.5;
+			earth.spin += 6;
+			earth.orbit += 0.125;
 			sun.spin += 0.25;
 			bg.spin += 0.01;
+
+			moon.orbit += 1.5;
+			moon.spin += 1.5;
 		}
 		spinEarth = makeSpinMat(earth.spin);
 		orbitEarth = makeSpinMat(earth.orbit);
-		earth.transformationMatrix = orbitEarth*moveEarth*scaleEarth*spinnerY*spinEarth * tiltEarth* spinnerX *base;
+		earth.transformationMatrix = orbitEarth*moveEarth *tiltEarth  *scaleEarth*spinnerY*spinEarth * spinnerX *base;
 		earth.ggeom.bind();
 		GLint myLoc = glGetUniformLocation(shader, "transform");
 		glUniformMatrix4fv(myLoc, 1, false, glm::value_ptr(earth.transformationMatrix));
@@ -437,10 +406,20 @@ int main() {
 		glDrawArrays(GL_TRIANGLES, 0, GLsizei(sphere.verts.size()));
 		earth.texture.unbind();
 
+		spinMoon = makeSpinMat(moon.spin);
+		orbitMoon= makeSpinMat(moon.orbit);
+		moon.transformationMatrix = orbitEarth*moveEarth*orbitMoon * moveMoon * tiltMoon * scaleMoon * spinMoon*spinnerY * spinnerX * base;
+		moon.ggeom.bind();
+		glUniformMatrix4fv(myLoc, 1, false, glm::value_ptr(moon.transformationMatrix));
+		glUniform1i(myLocF, 0);
+		moon.texture.bind();
+		glDrawArrays(GL_TRIANGLES, 0, GLsizei(sphere.verts.size()));
+		moon.texture.unbind();
+
 
 		sun.ggeom.bind();
 		spinSun = makeSpinMat(sun.spin);
-		sun.transformationMatrix = scaleSun*spinSun*spinnerY*spinnerX*base;
+		sun.transformationMatrix = tiltSun*scaleSun*spinSun*spinnerY*spinnerX*base;
 		glUniformMatrix4fv(myLoc, 1, false, glm::value_ptr(sun.transformationMatrix));
 		glUniform1i(myLocF, 1);
 		sun.texture.bind();
