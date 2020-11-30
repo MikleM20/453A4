@@ -41,6 +41,7 @@ std::vector<glm::vec3> points2;
 std::vector<glm::vec3> normals2;
 std::vector<glm::vec2> textureMap2;
 GLuint indexArray2[50 * 50 * 6];
+bool play = true;
 
 
 
@@ -90,6 +91,14 @@ public:
 	}
 
 	virtual void keyCallback(int key, int scancode, int action, int mods) {
+		if (action == GLFW_PRESS && key == GLFW_KEY_SPACE) {
+			if (play) {
+				play = false;
+			}
+			else if (!play) {
+				play = true;
+			}
+		}
 	}
 	virtual void mouseButtonCallback(int button, int action, int mods) {
 		if (button == GLFW_MOUSE_BUTTON_RIGHT) {
@@ -410,12 +419,12 @@ int main() {
 
 		a4->viewPipeline(shader);
 
-
-		earth.spin += 1;
-		earth.orbit += 0.5;
-		sun.spin += 0.25;
-		bg.spin += 0.01;
-
+		if (play) {
+			earth.spin += 1;
+			earth.orbit += 0.5;
+			sun.spin += 0.25;
+			bg.spin += 0.01;
+		}
 		spinEarth = makeSpinMat(earth.spin);
 		orbitEarth = makeSpinMat(earth.orbit);
 		earth.transformationMatrix = orbitEarth*moveEarth*scaleEarth*spinnerY*spinEarth * tiltEarth* spinnerX *base;
