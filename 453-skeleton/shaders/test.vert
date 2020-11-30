@@ -8,12 +8,15 @@ uniform mat4 M;
 uniform mat4 V;
 uniform mat4 P;
 uniform mat4 transform;
+uniform int sunObject;
 
 out vec3 fragPos;
 out vec2 tc;
 out vec3 n;
+flat out int isSun;
 
 void main() {
+	isSun  = sunObject;
 	fragPos = pos;
 	tc = texCoord;
 	n = normal;
